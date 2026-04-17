@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Git remotes
+
+Always use `origin` (https://github.com/Pjieter/plottr.git) for push/pull/PR operations. Never interact with `upstream`.
+
 ## Commands
 
 ```bash
