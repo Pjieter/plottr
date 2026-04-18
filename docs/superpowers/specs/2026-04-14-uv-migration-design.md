@@ -18,7 +18,8 @@ Switch plottr to use `uv` for environment management, testing, and running — b
 ## Out of Scope
 
 - Changing the build backend (stays `setuptools` + `versioningit`)
-- Any changes to plottr source code or tests
+- Application source-code changes unrelated to packaging/environment migration
+- Test rewrites or behavioral changes beyond the minimal test/CI configuration updates required for the uv migration
 
 ---
 
@@ -38,7 +39,7 @@ test = [
     "pytest",
     "pytest-qt",
     "mypy==1.13.0",
-    "PyQt5-stubs==5.15.6.0",
+    "PyQt6-stubs",
     "pandas-stubs",
 ]
 ```
@@ -60,8 +61,8 @@ Note: `watchdog` is already in `[project.dependencies]` — not duplicated in te
 ### Local Dev Workflow
 
 ```bash
-uv sync --extra pyqt5            # create env + install all deps
-uv sync --extra pyqt5 --group test  # include test deps
+uv sync --extra pyqt6            # create env + install all deps
+uv sync --extra pyqt6 --group test  # include test deps
 uv run pytest test/pytest        # run tests
 uv run mypy plottr               # type check
 uv run plottr-autoplot-ddh5      # run app
@@ -78,7 +79,7 @@ uv run plottr-monitr
 Slim down to just the sync step — python setup moves to each workflow:
 
 ```yaml
-- run: uv sync --extra pyqt5 --group test
+- run: uv sync --extra pyqt6 --group test
   shell: bash
 ```
 
@@ -115,7 +116,7 @@ Replace `python -m build` + twine with:
 
 ## Testing Plan
 
-1. Run `uv sync --extra pyqt5 --group test` locally — verify env created
+1. Run `uv sync --extra pyqt6 --group test` locally — verify env created
 2. Run `uv run pytest test/pytest` — all tests pass
 3. Run `uv run mypy plottr` — no new errors
-4. Push to PR — CI passes on all Python versions (3.10–3.13)
+4. Push to PR — CI passes on all Python versions (3.11–3.13)

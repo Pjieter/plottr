@@ -4,13 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Git remotes
 
-Always use `origin` (https://github.com/Pjieter/plottr.git) for push/pull/PR operations. Never interact with `upstream`.
+Always use the `origin` remote of the current clone for push/pull/PR operations. Never interact with `upstream`.
 
 ## Commands
 
 ```bash
 # Install (editable)
-uv sync --extra pyqt5   # or pyqt6 / pyside2
+uv sync --extra pyqt6   # or pyqt5 / pyside2
 
 # Run all tests
 uv run pytest test/pytest

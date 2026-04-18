@@ -41,7 +41,7 @@ test = [
     "pytest",
     "pytest-qt",
     "mypy==1.13.0",
-    "PyQt5-stubs==5.15.6.0",
+    "PyQt6-stubs",
     "pandas-stubs",
 ]
 ```
@@ -118,7 +118,7 @@ Expected: shows as untracked (not ignored). If it does NOT appear, open `.gitign
 - [ ] **Step 4: Install env and verify it works**
 
 ```bash
-uv sync --extra pyqt5 --group test
+uv sync --extra pyqt6 --group test
 ```
 
 Expected: uv creates `.venv`, installs all packages, no errors.
@@ -156,7 +156,7 @@ runs:
   using: "composite"
   steps:
     - name: Install-dependencies
-      run: uv sync --extra pyqt5 --group test
+      run: uv sync --extra pyqt6 --group test
       shell: bash
 ```
 
@@ -196,7 +196,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.11", "3.12", "3.13"]
     env:
       DISPLAY: ':99.0'
 
@@ -283,7 +283,7 @@ git commit -m "ci: switch release workflow to uv build + uv publish"
 
 ```bash
 rm -rf .venv
-uv sync --extra pyqt5 --group test
+uv sync --extra pyqt6 --group test
 ```
 
 Expected: clean install, no errors.
