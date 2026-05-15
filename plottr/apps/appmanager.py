@@ -99,7 +99,7 @@ class AppServer(QtCore.QObject):
 
             if self.thread().isInterruptionRequested():
                 self.running = False
-            qtsleep(0.5)
+            qtsleep(0.05)
 
         # When the server is done, close the socket.
         self.socket.close(1)
@@ -217,7 +217,8 @@ class App(QtCore.QObject):
         if self.server is not None and self.serverThread is not None:
             self.serverThread.requestInterruption()
             self.serverThread.quit()
-            self.serverThread.wait()
+            if not self.serverThread.wait(5000):
+                self.serverThread.terminate()
             self.server.deleteLater()
             self.serverThread.deleteLater()
             self.serverThread = None
@@ -389,8 +390,14 @@ class AppManager(QtWidgets.QWidget):
             return False
         socket = self.processes[Id]['socket']
         assert isinstance(socket, zmq.sugar.socket.Socket)
+        socket.setsockopt(zmq.RCVTIMEO, 3000)
         socket.send_pyobj('ping')
-        reply = socket.recv_pyobj()
+        try:
+            reply = socket.recv_pyobj()
+        except zmq.Again:
+            return False
+        finally:
+            socket.setsockopt(zmq.RCVTIMEO, -1)
         if reply == 'pong':
             return True
         return False
@@ -456,7 +463,8 @@ class AppManager(QtWidgets.QWidget):
 
         if self.procmonThread is not None:
             self.procmonThread.quit()
-            self.procmonThread.wait()
+            if not self.procmonThread.wait(5000):
+                self.procmonThread.terminate()
             self.procmonThread.deleteLater()
             self.procmonThread = None
 

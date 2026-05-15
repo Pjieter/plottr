@@ -1,6 +1,7 @@
 qcodes
 pytest
 pytest-qt
+pytest-timeout
 mypy==1.13.0
 PyQt6-stubs
 pandas-stubs
