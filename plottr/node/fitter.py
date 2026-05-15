@@ -518,7 +518,7 @@ class OptionSpinbox(QtWidgets.QDoubleSpinBox):
         self.setRange(-1 * MAX_FLOAT, MAX_FLOAT)
         self.setValue(default_value)
 
-    def setMaximum(self, maximum: str) -> None:  # type: ignore[override]
+    def setMaximum(self, maximum: str) -> None:
         try:
             value = eval(maximum)
         except:
@@ -528,7 +528,7 @@ class OptionSpinbox(QtWidgets.QDoubleSpinBox):
         else:
             super().setMaximum(MAX_FLOAT)
 
-    def setMinimum(self, minimum: str) -> None:  # type: ignore[override]
+    def setMinimum(self, minimum: str) -> None:
         try:
             value = eval(minimum)
         except:

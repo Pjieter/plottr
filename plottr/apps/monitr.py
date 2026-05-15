@@ -453,7 +453,7 @@ class FileModel(QtGui.QStandardItemModel):
         super().__init__(rows, columns, parent=parent)
         self.monitor_path = Path(monitor_path)
         self.header_labels = ["File path", "Tags"]
-        self.currently_selected_folder = None
+        self.currently_selected_folder: Optional[Path] = None
 
         # The main dictionary has all the datasets (folders) Path as keys, with the actual item as its value.
         self.main_dictionary: Dict[Path, Item] = {}
@@ -1949,7 +1949,7 @@ class FileExplorer(QtWidgets.QWidget):
         *args: Any,
         **kwargs: Any,
     ):
-        super().__init__(parent=parent, *args, **kwargs)  # type: ignore[misc] # I suspect this error comes from having parent possibly be a kwarg too.
+        super().__init__(parent=parent, *args, **kwargs)
 
         # Holds all the current .ddh5 file paths that are currently being displayed.
         # Used to set the tooltip in the copy button
@@ -2184,7 +2184,7 @@ class FileExplorer(QtWidgets.QWidget):
                     if tpe == ContentType.data:
                         self.path_list.append(str(path))
         else:
-            item = self.model.itemFromIndex(item_index)  # type: ignore[attr-defined] # Not sure why mypy is complaining about using itemFromIndex only here but not in other places.
+            item = self.model.itemFromIndex(item_index)
             assert isinstance(item, Item)
             for path, tpe in item.files.items():
                 if tpe == ContentType.data:
@@ -2359,7 +2359,7 @@ class DataTreeWidget(QtWidgets.QTreeWidget):
             rows += 1
             index = self.indexFromItem(it.value())
             height += self.rowHeight(index)
-            it += 1  # type: ignore[assignment, operator] # Taken from this example:
+            it += 1  # Taken from this example:
         # https://riverbankcomputing.com/pipermail/pyqt/2014-May/034315.html
 
         # calculating width:

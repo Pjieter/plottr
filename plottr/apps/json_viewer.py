@@ -155,14 +155,14 @@ class JsonModel(QAbstractItemModel):
 
         item = index.internalPointer()
 
-        if role == Qt.DisplayRole:
+        if role == Qt.DisplayRole:  # type: ignore[attr-defined]
             if index.column() == 0:
                 return item.key
 
             if index.column() == 1:
                 return item.value
 
-        elif role == Qt.EditRole:
+        elif role == Qt.EditRole:  # type: ignore[attr-defined]
             if index.column() == 1:
                 return item.value
 
@@ -177,7 +177,7 @@ class JsonModel(QAbstractItemModel):
             role (Qt.ItemDataRole)
 
         """
-        if role == Qt.EditRole:
+        if role == Qt.EditRole:  # type: ignore[attr-defined]
             if index.column() == 1:
                 item = index.internalPointer()
                 item.value = str(value)
@@ -185,7 +185,7 @@ class JsonModel(QAbstractItemModel):
                 if __binding__ in ("PySide", "PyQt4"):  # type: ignore[name-defined]
                     self.dataChanged.emit(index, index)
                 else:
-                    self.dataChanged.emit(index, index, [Qt.EditRole])
+                    self.dataChanged.emit(index, index, [Qt.EditRole])  # type: ignore[attr-defined]
 
                 return True
 
@@ -199,10 +199,10 @@ class JsonModel(QAbstractItemModel):
         For the JsonModel, it returns only data for columns (orientation = Horizontal)
 
         """
-        if role != Qt.DisplayRole:
+        if role != Qt.DisplayRole:  # type: ignore[attr-defined]
             return None
 
-        if orientation == Qt.Horizontal:
+        if orientation == Qt.Horizontal:  # type: ignore[attr-defined]
             return self._headers[section]
 
         return None
@@ -267,7 +267,7 @@ class JsonModel(QAbstractItemModel):
         """
         return 2
 
-    def flags(self, index: QModelIndex) -> Qt.ItemFlags:
+    def flags(self, index: QModelIndex) -> Qt.ItemFlag:  # type: ignore[override]
         """Override from QAbstractItemModel
 
         Return flags of index
@@ -275,7 +275,7 @@ class JsonModel(QAbstractItemModel):
         flags = super(JsonModel, self).flags(index)
 
         if index.column() == 1:
-            return Qt.ItemIsEditable | flags
+            return Qt.ItemIsEditable | flags  # type: ignore[attr-defined]
         else:
             return flags
 

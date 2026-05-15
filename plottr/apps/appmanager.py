@@ -279,7 +279,7 @@ class ProcessMonitor(QtCore.QObject):
         Gets called when any process emits the readyReadStandardOutput signal, and prints any message it receives.
         """
         for Id, process in self.processes.items():
-            output = str(process.readAllStandardOutput(), 'utf-8')  # type: ignore[call-overload] # mypy complains about str() not accepting QbyteArray even though it is an object
+            output = str(process.readAllStandardOutput(), 'utf-8')
             if output != '':
                 print(f'Process {Id}: {output}')
 
@@ -289,7 +289,7 @@ class ProcessMonitor(QtCore.QObject):
         Gets called when any process emits the readyReadStandardError signal, and prints any messages it receives.
         """
         for Id, process in self.processes.items():
-            output = str(process.readAllStandardError(), 'utf-8')  # type: ignore[call-overload] # mypy complains about str() not accepting QbyteArray even though it is an object.
+            output = str(process.readAllStandardError(), 'utf-8')
             if output != '':
                 print(f'Process {Id}: {output}')
 
