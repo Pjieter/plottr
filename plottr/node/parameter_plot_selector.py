@@ -4,7 +4,7 @@ import numpy as np
 
 from plottr import QtWidgets
 from ..gui.widgets import FormLayoutWrapper, DimensionCombo
-from ..data.datadict import DataDict, DataDictBase
+from ..data.datadict import DataDict, DataDictBase, is_meta_key
 from .node import Node, NodeWidget, updateOption
 
 
@@ -110,7 +110,9 @@ class ParameterPlotSelector(Node):
         if self._xParam is None or self._yParam is None:
             return dict(dataOut=dataIn.copy())
 
-        all_fields = dataIn.axes() + dataIn.dependents()
+        # Deduplicate: axes() can list the same name multiple times when
+        # several dependents share an axis.
+        all_fields = list(dict.fromkeys(dataIn.axes() + dataIn.dependents()))
 
         if self._xParam not in all_fields:
             self.node_logger.warning(
@@ -128,8 +130,21 @@ class ParameterPlotSelector(Node):
             self.node_logger.warning("xParam and yParam are the same field. Passing through.")
             return dict(dataOut=dataIn.copy())
 
-        x_vals = np.array(dataIn.data_vals(self._xParam)).flatten()
-        y_vals = np.array(dataIn.data_vals(self._yParam)).flatten()
+        x_raw = dataIn.data_vals(self._xParam)
+        y_raw = dataIn.data_vals(self._yParam)
+
+        if x_raw is None or y_raw is None:
+            self.node_logger.warning("One or both selected params have no values. Passing through.")
+            return dict(dataOut=dataIn.copy())
+
+        # For MeshgridDataDict inputs the arrays are N-D (full grid shape);
+        # flatten to 1-D to produce a scatter dataset.
+        x_vals = np.array(x_raw).flatten()
+        y_vals = np.array(y_raw).flatten()
+
+        if x_vals.size == 0 or y_vals.size == 0:
+            self.node_logger.warning("One or both selected params are empty. Passing through.")
+            return dict(dataOut=dataIn.copy())
 
         if x_vals.size != y_vals.size:
             self.node_logger.warning(
@@ -151,5 +166,11 @@ class ParameterPlotSelector(Node):
             'label': dataIn[self._yParam].get('label', ''),
             'unit': dataIn[self._yParam].get('unit', ''),
         }
+
+        # Preserve global metadata (e.g. __info__ written by DDH5Writer).
+        for key, val in dataIn.items():
+            if is_meta_key(key):
+                dd_out[key] = val
+
         dd_out.validate()
         return dict(dataOut=dd_out)
