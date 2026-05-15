@@ -267,7 +267,7 @@ class JsonModel(QAbstractItemModel):
         """
         return 2
 
-    def flags(self, index: QModelIndex) -> Qt.ItemFlag:  # type: ignore[override]
+    def flags(self, index: QModelIndex) -> Qt.ItemFlag:
         """Override from QAbstractItemModel
 
         Return flags of index
