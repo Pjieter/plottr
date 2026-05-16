@@ -115,8 +115,18 @@ def test_meshgrid_flattened_to_scatter(two_axis_dd):
     assert len(out.data_vals('z')) == 80
 
 
-def test_passthrough_on_size_mismatch():
+def test_passthrough_on_size_mismatch(monkeypatch):
     """Fields with different flattened sizes fall back to pass-through with a warning."""
+    # This shape mismatch makes the DataDict formally invalid; patch the base
+    # Node.process pre-check so we can exercise the selector's own fallback path.
+    from plottr.node.node import Node
+
+    monkeypatch.setattr(
+        Node,
+        'process',
+        lambda self, dataIn=None: dict(dataOut=dataIn),
+    )
+
     dd = DataDict(
         time={'values': np.linspace(0, 1, 10)},
         voltage={'values': np.ones(10), 'axes': ['time']},
