@@ -157,6 +157,19 @@ def test_xy_selector_with_roles(qtbot):
         'z': (ReductionMethod.elementSelection, [], {'index': 0, 'axis': 2})
     }
 
+    # now set the role directly through the meta property
+    node.dimensionRoles = {
+        'x': 'y-axis',
+        'y': (ReductionMethod.average, [], {}),
+        'z': 'x-axis',
+    }
+
+    assert node.xyAxes == ('z', 'x')
+    assert num.arrays_equal(
+        fc.outputValues()['dataOut'].data_vals('vals'),
+        vals[:,:,:].mean(axis=1).transpose((1, 0))
+    )
+
 
 def test_xy_selector_stale_axis_auto_recovery(qtbot):
     """When the configured x-axis disappears from the data, XYSelector
@@ -201,15 +214,3 @@ def test_xy_selector_stale_axis_auto_recovery(qtbot):
     assert out is not None
     assert node._xyAxes[0] == 'new_x'
 
-    # now set the role directly through the meta property
-    node.dimensionRoles = {
-        'x': 'y-axis',
-        'y': (ReductionMethod.average, [], {}),
-        'z': 'x-axis',
-    }
-
-    assert node.xyAxes == ('z', 'x')
-    assert num.arrays_equal(
-        fc.outputValues()['dataOut'].data_vals('vals'),
-        vals[:,:,:].mean(axis=1).transpose((1, 0))
-    )
