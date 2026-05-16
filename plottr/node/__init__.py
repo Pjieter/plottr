@@ -3,4 +3,3 @@ from .node import (
     updateGuiFromNode, emitGuiUpdate
 )
 from .tools import linearFlowchart
-from .parameter_plot_selector import ParameterPlotSelector
