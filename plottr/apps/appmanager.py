@@ -469,10 +469,15 @@ class AppManager(QtWidgets.QWidget):
             self.procmonThread.deleteLater()
             self.procmonThread = None
 
-        for Id, data in self.processes.items():
+        for Id, data in list(self.processes.items()):
             process = data['process']
             assert isinstance(process, QtCore.QProcess)
-            process.close()
+            try:
+                process.finished.disconnect()
+            except RuntimeError:
+                pass
+            process.kill()
+            process.waitForFinished(1000)
 
             socket = data['socket']
             assert isinstance(socket, zmq.sugar.socket.Socket)
