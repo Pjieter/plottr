@@ -115,27 +115,24 @@ def test_meshgrid_flattened_to_scatter(two_axis_dd):
     assert len(out.data_vals('z')) == 80
 
 
-def test_passthrough_on_size_mismatch(simple_dd):
+def test_passthrough_on_size_mismatch():
     """Fields whose flat sizes differ fall back to pass-through with a warning.
 
-    We patch data_vals so the node sees mismatched sizes while the DataDict
-    itself stays valid (so copy() succeeds on the pass-through path).
+    DataDict only requires the same record count (len), not the same inner
+    shape, so a field with shape (10, 5) and one with shape (10,) are both
+    valid.  Flattening gives 50 vs 10 elements — a legitimate size mismatch
+    that requires no mocking and leaves copy() working correctly.
     """
-    from unittest.mock import patch
-
-    original_data_vals = simple_dd.__class__.data_vals
-
-    def _mismatched(self, name):
-        val = original_data_vals(self, name)
-        # Make current appear to have 7 points instead of 50.
-        if name == 'current':
-            return val[:7]
-        return val
-
-    with patch.object(simple_dd.__class__, 'data_vals', _mismatched):
-        result = _node_process('voltage', 'current', simple_dd)
-
+    dd = DataDict(
+        time={'values': np.linspace(0, 1, 10)},
+        voltage={'values': np.ones((10, 5)), 'axes': ['time']},
+        current={'values': np.ones(10), 'axes': ['time']},
+    )
+    dd.validate()
+    result = _node_process('voltage', 'current', dd)
     assert result is not None
     out = result['dataOut']
-    # Pass-through: original structure is preserved.
-    assert set(out.dependents()) == set(simple_dd.dependents())
+    # Pass-through: original structure and shapes are preserved.
+    assert set(out.dependents()) == {'voltage', 'current'}
+    assert out['voltage']['values'].shape == (10, 5)
+    assert out['current']['values'].shape == (10,)

@@ -835,9 +835,16 @@ class XYSelector(DimensionReducer):
                 self.node_logger.warning(
                     f'x-Axis {self._xyAxes[0]!r} not present in data; '
                     f'auto-assigning {new_x!r}')
-                self._xyAxes = (new_x, None)
+                # Preserve y-axis if it is still present and doesn't collide.
+                old_y = self._xyAxes[1]
+                new_y = old_y if (
+                    old_y is not None
+                    and old_y in availableAxes
+                    and old_y != new_x
+                ) else None
+                self._xyAxes = (new_x, new_y)
                 self.optionChangeNotification.emit({'dimensionRoles': self.dimensionRoles})
-                return False
+                # Fall through so process() continues with the updated assignment.
 
             if self._xyAxes[1] is None:
                 self.node_logger.debug(f'y-Axis is None; result will be 1D')
