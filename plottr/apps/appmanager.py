@@ -396,9 +396,17 @@ class AppManager(QtWidgets.QWidget):
         try:
             reply = socket.recv_pyobj()
         except zmq.Again:
+            # REQ socket is now in "waiting for reply" state and cannot send
+            # again; recreate it so subsequent pings or messages don't fail.
+            self.poller.unregister(socket)
+            socket.close()
+            port = self.processes[Id]['port']
+            new_socket = self.context.socket(zmq.REQ)
+            new_socket.connect(f'tcp://{self.address}:{str(port)}')
+            self.poller.register(new_socket, zmq.POLLIN)
+            self.processes[Id]['socket'] = new_socket
             return False
-        finally:
-            socket.setsockopt(zmq.RCVTIMEO, -1)
+        socket.setsockopt(zmq.RCVTIMEO, -1)
         if reply == 'pong':
             return True
         return False

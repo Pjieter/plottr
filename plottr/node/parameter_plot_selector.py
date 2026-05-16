@@ -139,8 +139,9 @@ class ParameterPlotSelector(Node):
 
         # For MeshgridDataDict inputs the arrays are N-D (full grid shape);
         # flatten to 1-D to produce a scatter dataset.
-        x_vals = np.array(x_raw).flatten()
-        y_vals = np.array(y_raw).flatten()
+        # Use np.ma.array so MaskedArray masks are preserved rather than stripped.
+        x_vals = np.ma.array(x_raw).flatten()
+        y_vals = np.ma.array(y_raw).flatten()
 
         if x_vals.size == 0 or y_vals.size == 0:
             self.node_logger.warning("One or both selected params are empty. Passing through.")
@@ -154,18 +155,16 @@ class ParameterPlotSelector(Node):
             )
             return dict(dataOut=dataIn.copy())
 
+        def _copy_field(src: dict, extra: dict) -> dict:
+            out = {k: v for k, v in src.items() if k not in ('values', 'axes')}
+            out.update(extra)
+            return out
+
         dd_out = DataDict()
-        dd_out[self._xParam] = {
-            'values': x_vals,
-            'label': dataIn[self._xParam].get('label', ''),
-            'unit': dataIn[self._xParam].get('unit', ''),
-        }
-        dd_out[self._yParam] = {
-            'values': y_vals,
-            'axes': [self._xParam],
-            'label': dataIn[self._yParam].get('label', ''),
-            'unit': dataIn[self._yParam].get('unit', ''),
-        }
+        dd_out[self._xParam] = _copy_field(dataIn[self._xParam], {'values': x_vals})
+        dd_out[self._yParam] = _copy_field(
+            dataIn[self._yParam], {'values': y_vals, 'axes': [self._xParam]}
+        )
 
         # Preserve global metadata (e.g. __info__ written by DDH5Writer).
         for key, val in dataIn.items():

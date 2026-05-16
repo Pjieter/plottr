@@ -831,8 +831,12 @@ class XYSelector(DimensionReducer):
                     f'x-Axis is None. this will result in empty output data.')
                 return False
             elif self._xyAxes[0] not in availableAxes:
+                new_x = availableAxes[0]
                 self.node_logger.warning(
-                    f'x-Axis {self._xyAxes[0]} not present in data')
+                    f'x-Axis {self._xyAxes[0]!r} not present in data; '
+                    f'auto-assigning {new_x!r}')
+                self._xyAxes = (new_x, None)
+                self.optionChangeNotification.emit({'dimensionRoles': self.dimensionRoles})
                 return False
 
             if self._xyAxes[1] is None:

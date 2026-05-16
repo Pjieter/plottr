@@ -33,11 +33,15 @@ def two_axis_dd():
 
 
 def _node_process(xparam, yparam, data):
-    node = ParameterPlotSelector('test')
+    # Disable UI to avoid requiring a QApplication in pure-logic tests.
+    ParameterPlotSelector.useUi = False
+    try:
+        node = ParameterPlotSelector('test')
+    finally:
+        ParameterPlotSelector.useUi = True
     node._xParam = xparam
     node._yParam = yparam
-    result = node.process(dataIn=data)
-    return result
+    return node.process(dataIn=data)
 
 
 def test_passthrough_when_params_none(simple_dd):
@@ -109,3 +113,20 @@ def test_meshgrid_flattened_to_scatter(two_axis_dd):
     # 10 * 8 = 80 points after flatten
     assert len(out.data_vals('x')) == 80
     assert len(out.data_vals('z')) == 80
+
+
+def test_passthrough_on_size_mismatch():
+    """Fields with different flattened sizes fall back to pass-through with a warning."""
+    dd = DataDict(
+        time={'values': np.linspace(0, 1, 10)},
+        voltage={'values': np.ones(10), 'axes': ['time']},
+        current={'values': np.ones(10), 'axes': ['time']},
+    )
+    dd.validate()
+    # Artificially create a size mismatch after validation.
+    dd['current']['values'] = np.ones(7)
+    result = _node_process('voltage', 'current', dd)
+    assert result is not None
+    out = result['dataOut']
+    # Pass-through: original structure preserved.
+    assert set(out.dependents()) == {'voltage', 'current'}
