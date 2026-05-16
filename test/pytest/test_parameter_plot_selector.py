@@ -115,28 +115,27 @@ def test_meshgrid_flattened_to_scatter(two_axis_dd):
     assert len(out.data_vals('z')) == 80
 
 
-def test_passthrough_on_size_mismatch(monkeypatch):
-    """Fields with different flattened sizes fall back to pass-through with a warning."""
-    # This shape mismatch makes the DataDict formally invalid; patch the base
-    # Node.process pre-check so we can exercise the selector's own fallback path.
-    from plottr.node.node import Node
+def test_passthrough_on_size_mismatch(simple_dd):
+    """Fields whose flat sizes differ fall back to pass-through with a warning.
 
-    monkeypatch.setattr(
-        Node,
-        'process',
-        lambda self, dataIn=None: dict(dataOut=dataIn),
-    )
+    We patch data_vals so the node sees mismatched sizes while the DataDict
+    itself stays valid (so copy() succeeds on the pass-through path).
+    """
+    from unittest.mock import patch
 
-    dd = DataDict(
-        time={'values': np.linspace(0, 1, 10)},
-        voltage={'values': np.ones(10), 'axes': ['time']},
-        current={'values': np.ones(10), 'axes': ['time']},
-    )
-    dd.validate()
-    # Artificially create a size mismatch after validation.
-    dd['current']['values'] = np.ones(7)
-    result = _node_process('voltage', 'current', dd)
+    original_data_vals = simple_dd.__class__.data_vals
+
+    def _mismatched(self, name):
+        val = original_data_vals(self, name)
+        # Make current appear to have 7 points instead of 50.
+        if name == 'current':
+            return val[:7]
+        return val
+
+    with patch.object(simple_dd.__class__, 'data_vals', _mismatched):
+        result = _node_process('voltage', 'current', simple_dd)
+
     assert result is not None
     out = result['dataOut']
-    # Pass-through: original structure preserved.
-    assert set(out.dependents()) == {'voltage', 'current'}
+    # Pass-through: original structure is preserved.
+    assert set(out.dependents()) == set(simple_dd.dependents())
