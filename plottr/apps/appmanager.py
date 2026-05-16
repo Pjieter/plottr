@@ -355,6 +355,7 @@ class AppManager(QtWidgets.QWidget):
             fullArgs = [str(Path(plottrPath).joinpath('apps', 'apprunner.py')), str(port), module, func] + list(args)
             process = QtCore.QProcess()
             process.start(sys.executable, fullArgs)
+            process.finished.connect(lambda exitCode, exitStatus, _id=Id: self.onProcessEneded(_id))
             process.waitForStarted(100)
             socket = self.context.socket(zmq.REQ)
             socket.connect(f'tcp://{self.address}:{str(port)}')
@@ -376,7 +377,7 @@ class AppManager(QtWidgets.QWidget):
 
         :param Id: The id of the parameter to delete.
         """
-        del self.processes[Id]
+        self.processes.pop(Id, None)
 
     def pingApp(self, Id: IdType) -> bool:
         """
