@@ -121,3 +121,9 @@ match = ["v*"]
 [tool.versioningit.onbuild]
 source-file = "plottr/_version.py"
 build-file = "plottr/_version.py"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+    "pytest-qt>=4.5.0",
+]
