@@ -219,6 +219,7 @@ class App(QtCore.QObject):
             self.serverThread.quit()
             if not self.serverThread.wait(5000):
                 self.serverThread.terminate()
+                self.serverThread.wait()
             self.server.deleteLater()
             self.serverThread.deleteLater()
             self.serverThread = None
@@ -377,7 +378,12 @@ class AppManager(QtWidgets.QWidget):
 
         :param Id: The id of the parameter to delete.
         """
-        self.processes.pop(Id, None)
+        data = self.processes.pop(Id, None)
+        if data is not None:
+            socket = data.get('socket')
+            if isinstance(socket, zmq.sugar.socket.Socket):
+                self.poller.unregister(socket)
+                socket.close()
 
     def pingApp(self, Id: IdType) -> bool:
         """
@@ -474,6 +480,7 @@ class AppManager(QtWidgets.QWidget):
             self.procmonThread.quit()
             if not self.procmonThread.wait(5000):
                 self.procmonThread.terminate()
+                self.procmonThread.wait()
             self.procmonThread.deleteLater()
             self.procmonThread = None
 
