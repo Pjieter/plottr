@@ -213,4 +213,6 @@ def test_xy_selector_stale_axis_auto_recovery(qtbot):
     out = fc.outputValues()['dataOut']
     assert out is not None
     assert node._xyAxes[0] == 'new_x'
+    # 'y' was still present and valid, so it must be preserved as the y-axis.
+    assert node._xyAxes[1] == 'y'
 

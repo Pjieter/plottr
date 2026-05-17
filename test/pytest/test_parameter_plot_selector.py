@@ -115,7 +115,7 @@ def test_meshgrid_flattened_to_scatter(two_axis_dd):
     assert len(out.data_vals('z')) == 80
 
 
-def test_passthrough_on_size_mismatch():
+def test_passthrough_on_size_mismatch(caplog):
     """Fields whose flat sizes differ fall back to pass-through with a warning.
 
     DataDict only requires the same record count (len), not the same inner
@@ -123,16 +123,20 @@ def test_passthrough_on_size_mismatch():
     valid.  Flattening gives 50 vs 10 elements — a legitimate size mismatch
     that requires no mocking and leaves copy() working correctly.
     """
+    import logging
     dd = DataDict(
         time={'values': np.linspace(0, 1, 10)},
         voltage={'values': np.ones((10, 5)), 'axes': ['time']},
         current={'values': np.ones(10), 'axes': ['time']},
     )
     dd.validate()
-    result = _node_process('voltage', 'current', dd)
+    with caplog.at_level(logging.WARNING):
+        result = _node_process('voltage', 'current', dd)
     assert result is not None
     out = result['dataOut']
     # Pass-through: original structure and shapes are preserved.
     assert set(out.dependents()) == {'voltage', 'current'}
     assert out['voltage']['values'].shape == (10, 5)
     assert out['current']['values'].shape == (10,)
+    # A warning must have been emitted describing the size mismatch.
+    assert any('different sizes' in r.getMessage() for r in caplog.records)

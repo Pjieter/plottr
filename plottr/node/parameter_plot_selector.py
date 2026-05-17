@@ -156,7 +156,10 @@ class ParameterPlotSelector(Node):
             return dict(dataOut=dataIn.copy())
 
         def _copy_field(src: dict, extra: dict) -> dict:
-            out = {k: v for k, v in src.items() if k not in ('values', 'axes')}
+            # Exclude '__shape__': after flattening the shape changes and any
+            # cached value from MeshgridDataDict.validate() would be stale.
+            out = {k: v for k, v in src.items()
+                   if k not in ('values', 'axes', '__shape__')}
             out.update(extra)
             return out
 
