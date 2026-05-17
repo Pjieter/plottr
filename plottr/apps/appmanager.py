@@ -99,7 +99,7 @@ class AppServer(QtCore.QObject):
 
             if self.thread().isInterruptionRequested():
                 self.running = False
-            qtsleep(0.5)
+            qtsleep(0.05)
 
         # When the server is done, close the socket.
         self.socket.close(1)
@@ -217,7 +217,9 @@ class App(QtCore.QObject):
         if self.server is not None and self.serverThread is not None:
             self.serverThread.requestInterruption()
             self.serverThread.quit()
-            self.serverThread.wait()
+            if not self.serverThread.wait(5000):
+                self.serverThread.terminate()
+                self.serverThread.wait()
             self.server.deleteLater()
             self.serverThread.deleteLater()
             self.serverThread = None
@@ -279,7 +281,7 @@ class ProcessMonitor(QtCore.QObject):
         Gets called when any process emits the readyReadStandardOutput signal, and prints any message it receives.
         """
         for Id, process in self.processes.items():
-            output = str(process.readAllStandardOutput(), 'utf-8')  # type: ignore[call-overload] # mypy complains about str() not accepting QbyteArray even though it is an object
+            output = str(process.readAllStandardOutput(), 'utf-8')
             if output != '':
                 print(f'Process {Id}: {output}')
 
@@ -289,7 +291,7 @@ class ProcessMonitor(QtCore.QObject):
         Gets called when any process emits the readyReadStandardError signal, and prints any messages it receives.
         """
         for Id, process in self.processes.items():
-            output = str(process.readAllStandardError(), 'utf-8')  # type: ignore[call-overload] # mypy complains about str() not accepting QbyteArray even though it is an object.
+            output = str(process.readAllStandardError(), 'utf-8')
             if output != '':
                 print(f'Process {Id}: {output}')
 
@@ -354,6 +356,7 @@ class AppManager(QtWidgets.QWidget):
             fullArgs = [str(Path(plottrPath).joinpath('apps', 'apprunner.py')), str(port), module, func] + list(args)
             process = QtCore.QProcess()
             process.start(sys.executable, fullArgs)
+            process.finished.connect(lambda exitCode, exitStatus, _id=Id: self.onProcessEneded(_id))
             process.waitForStarted(100)
             socket = self.context.socket(zmq.REQ)
             socket.connect(f'tcp://{self.address}:{str(port)}')
@@ -375,7 +378,12 @@ class AppManager(QtWidgets.QWidget):
 
         :param Id: The id of the parameter to delete.
         """
-        del self.processes[Id]
+        data = self.processes.pop(Id, None)
+        if data is not None:
+            socket = data.get('socket')
+            if isinstance(socket, zmq.sugar.socket.Socket):
+                self.poller.unregister(socket)
+                socket.close()
 
     def pingApp(self, Id: IdType) -> bool:
         """
@@ -389,8 +397,22 @@ class AppManager(QtWidgets.QWidget):
             return False
         socket = self.processes[Id]['socket']
         assert isinstance(socket, zmq.sugar.socket.Socket)
+        socket.setsockopt(zmq.RCVTIMEO, 3000)
         socket.send_pyobj('ping')
-        reply = socket.recv_pyobj()
+        try:
+            reply = socket.recv_pyobj()
+        except zmq.Again:
+            # REQ socket is now in "waiting for reply" state and cannot send
+            # again; recreate it so subsequent pings or messages don't fail.
+            self.poller.unregister(socket)
+            socket.close()
+            port = self.processes[Id]['port']
+            new_socket = self.context.socket(zmq.REQ)
+            new_socket.connect(f'tcp://{self.address}:{str(port)}')
+            self.poller.register(new_socket, zmq.POLLIN)
+            self.processes[Id]['socket'] = new_socket
+            return False
+        socket.setsockopt(zmq.RCVTIMEO, -1)
         if reply == 'pong':
             return True
         return False
@@ -456,14 +478,21 @@ class AppManager(QtWidgets.QWidget):
 
         if self.procmonThread is not None:
             self.procmonThread.quit()
-            self.procmonThread.wait()
+            if not self.procmonThread.wait(5000):
+                self.procmonThread.terminate()
+                self.procmonThread.wait()
             self.procmonThread.deleteLater()
             self.procmonThread = None
 
-        for Id, data in self.processes.items():
+        for Id, data in list(self.processes.items()):
             process = data['process']
             assert isinstance(process, QtCore.QProcess)
-            process.close()
+            try:
+                process.finished.disconnect()
+            except RuntimeError:
+                pass
+            process.kill()
+            process.waitForFinished(1000)
 
             socket = data['socket']
             assert isinstance(socket, zmq.sugar.socket.Socket)

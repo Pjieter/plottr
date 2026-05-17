@@ -7,7 +7,7 @@ import sys
 import signal
 
 if TYPE_CHECKING:
-    from PyQt5 import QtCore, QtGui, QtWidgets
+    from PyQt5 import QtCore, QtGui, QtWidgets  # type: ignore[import-not-found]
     Signal = QtCore.pyqtSignal
     Slot = QtCore.pyqtSlot
 else:

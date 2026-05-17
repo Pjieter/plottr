@@ -169,3 +169,50 @@ def test_xy_selector_with_roles(qtbot):
         fc.outputValues()['dataOut'].data_vals('vals'),
         vals[:,:,:].mean(axis=1).transpose((1, 0))
     )
+
+
+def test_xy_selector_stale_axis_auto_recovery(qtbot):
+    """When the configured x-axis disappears from the data, XYSelector
+    auto-assigns the first available axis and immediately produces output."""
+
+    XYSelector.uiClass = None
+
+    fc = linearFlowchart(('xysel', XYSelector))
+    node = fc.nodes()['xysel']
+
+    x = np.arange(5.0)
+    y = np.linspace(0, 1, 5)
+    xx, yy = np.meshgrid(x, y, indexing='ij')
+    vals = xx + yy
+    data_with_x = MeshgridDataDict(
+        x=dict(values=xx),
+        y=dict(values=yy),
+        vals=dict(values=vals, axes=['x', 'y'])
+    )
+    assert data_with_x.validate()
+
+    # Configure the node with x as the x-axis.
+    fc.setInput(dataIn=data_with_x)
+    node.xyAxes = ('x', 'y')
+    assert fc.outputValues()['dataOut'] is not None
+
+    # Now feed data where 'x' is gone; only 'new_x' and 'y' are present.
+    nx = np.arange(5.0)
+    ny = np.linspace(0, 1, 5)
+    nnx, nny = np.meshgrid(nx, ny, indexing='ij')
+    data_without_x = MeshgridDataDict(
+        new_x=dict(values=nnx),
+        y=dict(values=nny),
+        vals=dict(values=nnx + nny, axes=['new_x', 'y'])
+    )
+    assert data_without_x.validate()
+
+    fc.setInput(dataIn=data_without_x)
+
+    # The stale 'x' axis should be auto-assigned to 'new_x'; output must appear.
+    out = fc.outputValues()['dataOut']
+    assert out is not None
+    assert node._xyAxes[0] == 'new_x'
+    # 'y' was still present and valid, so it must be preserved as the y-axis.
+    assert node._xyAxes[1] == 'y'
+

@@ -18,6 +18,7 @@ from ..gui import PlotWindow
 from ..gui.widgets import MonitorIntervalInput, SnapshotWidget
 from ..node.data_selector import DataSelector
 from ..node.dim_reducer import XYSelector
+from ..node.parameter_plot_selector import ParameterPlotSelector
 from ..node.filter.correct_offset import SubtractAverage
 from ..node.scaleunits import ScaleUnits
 from ..node.grid import DataGridder, GridOption
@@ -52,12 +53,15 @@ def autoplot(inputData: Union[None, DataDictBase] = None,
     nodes: List[Tuple[str, Type[Node]]] = [
         ('Data selection', DataSelector),
         ('Grid', DataGridder),
+        ('Parametric plot', ParameterPlotSelector),
         ('Dimension assignment', XYSelector),
     ]
 
     widgetOptions = {
         "Data selection": dict(visible=True,
                                dockArea=QtCore.Qt.TopDockWidgetArea),
+        "Parametric plot": dict(visible=False,
+                                dockArea=QtCore.Qt.TopDockWidgetArea),
         "Dimension assignment": dict(visible=True,
                                      dockArea=QtCore.Qt.TopDockWidgetArea),
     }
@@ -315,6 +319,7 @@ def autoplotQcodesDataset(log: bool = False,
         ('Data loader', QCodesDSLoader),
         ('Data selection', DataSelector),
         ('Grid', DataGridder),
+        ('Parametric plot', ParameterPlotSelector),
         ('Dimension assignment', XYSelector),
         ('Subtract average', SubtractAverage),
         ('Scale units', ScaleUnits),
@@ -324,6 +329,8 @@ def autoplotQcodesDataset(log: bool = False,
     widgetOptions = {
         "Data selection": dict(visible=True,
                                dockArea=QtCore.Qt.TopDockWidgetArea),
+        "Parametric plot": dict(visible=False,
+                                dockArea=QtCore.Qt.TopDockWidgetArea),
         "Dimension assignment": dict(visible=True,
                                      dockArea=QtCore.Qt.TopDockWidgetArea),
     }
@@ -347,6 +354,7 @@ def autoplotDDH5(filepath: str = '',
         ('Data selection', DataSelector),
         ('Grid', DataGridder),
         ('Histogram', Histogrammer),
+        ('Parametric plot', ParameterPlotSelector),
         ('Dimension assignment', XYSelector),
         ('plot', PlotNode)
     )
@@ -356,6 +364,8 @@ def autoplotDDH5(filepath: str = '',
                                dockArea=QtCore.Qt.TopDockWidgetArea),
         "Histogram": dict(visible=False,
                           dockArea=QtCore.Qt.TopDockWidgetArea),
+        "Parametric plot": dict(visible=False,
+                                dockArea=QtCore.Qt.TopDockWidgetArea),
         "Dimension assignment": dict(visible=True,
                                      dockArea=QtCore.Qt.TopDockWidgetArea),
     }
